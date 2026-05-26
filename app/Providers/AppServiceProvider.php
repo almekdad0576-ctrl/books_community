@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Services\AuthService;
+use App\Services\BookService;
 use Laravel\Sanctum\Sanctum;
 use App\Models\PersonalAccessToken;
 
@@ -16,6 +17,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(AuthService::class, function ($app) {
             return new AuthService();
+        });
+
+        $this->app->singleton(BookService::class, function ($app) {
+            return new BookService();
         });
     }
 

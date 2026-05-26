@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -45,5 +47,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the books for the user.
+     */
+    public function books(): HasMany
+    {
+        return $this->hasMany(Book::class, 'author_id');
+    }
+
+    /**
+     * The books that the user has viewed.
+     */
+    public function viewedBooks(): BelongsToMany
+    {
+        return $this->belongsToMany(Book::class, 'book_views', 'user_id', 'book_id')
+                    ->withTimestamps();
     }
 }
