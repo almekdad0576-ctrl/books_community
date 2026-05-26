@@ -24,6 +24,7 @@ class UpdateBookRequest extends FormRequest
         return [
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|nullable|string',
+            'category_id' => 'sometimes|required|uuid|exists:categories,id',
         ];
     }
 }

@@ -26,6 +26,7 @@ class BookService
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
                 'author_id' => $authorId,
+                'category_id' => $data['category_id'],
                 'status' => BookStatus::PENDING_UPLOAD,
             ]);
 
@@ -138,7 +139,7 @@ class BookService
     }
 
     /**
-     * Search books by title or author name.
+     * Search books by title, author name, or category name.
      */
     public function searchBooks(?string $query, $pageSize = null, $pageNumber = null)
     {
@@ -150,6 +151,9 @@ class BookService
             ->when($query, function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                   ->orWhereHas('author', function ($q) use ($query) {
+                      $q->where('name', 'like', "%{$query}%");
+                  })
+                  ->orWhereHas('category', function ($q) use ($query) {
                       $q->where('name', 'like', "%{$query}%");
                   });
             })
@@ -175,5 +179,21 @@ class BookService
     {
         $book = Book::where('author_id', $authorId)->findOrFail($id);
         return $book->delete();
+    }
+
+    /**
+     * Get books for a specific author.
+     */
+    public function getAuthorBooks(string $authorId, $pageSize = null, $pageNumber = null)
+    {
+        $pageSize = (int) ($pageSize ?? 10);
+        $pageNumber = (int) ($pageNumber ?? 1);
+
+        $offset = ($pageNumber - 1) * $pageSize;
+        return Book::where('author_id', $authorId)
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($pageSize)
+            ->get();
     }
 }

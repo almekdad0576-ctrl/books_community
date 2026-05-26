@@ -25,6 +25,7 @@ class StoreBookRequest extends FormRequest
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
+            'category_id' => 'required|uuid|exists:categories,id',
         ];
     }
 }

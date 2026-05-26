@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Book;
 use App\Models\User;
+use App\Models\Category;
 use App\Enums\BookStatus;
 use App\Enums\EntityType;
 use App\Enums\FileType;
@@ -21,6 +22,7 @@ class BookTest extends TestCase
     {
         Storage::fake('public');
         $user = User::factory()->create();
+        $category = Category::factory()->create();
         Sanctum::actingAs($user);
 
         $image = UploadedFile::fake()->create('cover.jpg', 100);
@@ -29,6 +31,7 @@ class BookTest extends TestCase
             'title' => 'Test Book',
             'description' => 'Test Description',
             'image' => $image,
+            'category_id' => $category->id,
         ]);
 
         $response->assertStatus(201)
@@ -105,11 +108,13 @@ class BookTest extends TestCase
     public function test_user_can_create_book(): void
     {
         $user = User::factory()->create();
+        $category = Category::factory()->create();
         Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/books', [
             'title' => 'Test Book',
             'description' => 'Test Description',
+            'category_id' => $category->id,
         ]);
 
         $response->assertStatus(201)
@@ -236,5 +241,175 @@ class BookTest extends TestCase
 
         $response->assertStatus(404);
         $this->assertDatabaseHas('books', ['id' => $book->id]);
+    }
+
+    public function test_user_can_get_all_categories(): void
+    {
+        Category::factory()->count(3)->create();
+
+        $response = $this->getJson('/api/categories');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Categories retrieved successfully',
+            ])
+            ->assertJsonCount(3, 'data');
+    }
+
+    public function test_guest_can_view_book(): void
+    {
+        $book = Book::factory()->create();
+
+        $response = $this->getJson("/api/books/{$book->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Book retrieved successfully',
+            ]);
+    }
+
+    public function test_user_can_search_books_by_category_name(): void
+    {
+        $category = Category::factory()->create(['name' => 'Adventure']);
+        $book = Book::factory()->create(['category_id' => $category->id, 'title' => 'The Quest']);
+        Book::factory()->create(['title' => 'Other Book']);
+
+        $response = $this->getJson('/api/books/search?query=Adventure');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Books retrieved successfully',
+            ])
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'The Quest')
+            ->assertJsonPath('data.0.category_name', 'Adventure');
+    }
+
+    public function test_user_can_get_popular_books_publicly(): void
+    {
+        Book::factory()->count(5)->create();
+
+        $response = $this->getJson('/api/books/popular');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Popular books retrieved successfully',
+            ]);
+    }
+
+    public function test_user_can_get_recent_books_publicly(): void
+    {
+        Book::factory()->count(5)->create();
+
+        $response = $this->getJson('/api/books/recent');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Recent books retrieved successfully',
+            ]);
+    }
+
+    public function test_user_can_get_own_books(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        
+        Book::factory()->count(3)->create(['author_id' => $user->id]);
+        Book::factory()->count(2)->create(); // Books by other users
+
+        $response = $this->getJson('/api/user/books');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'User books retrieved successfully',
+            ])
+            ->assertJsonCount(3, 'data');
+    }
+
+    public function test_user_can_get_all_books_publicly(): void
+    {
+        Book::factory()->count(5)->create();
+
+        $response = $this->getJson('/api/books');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Books retrieved successfully',
+            ])
+            ->assertJsonCount(5, 'data');
+    }
+
+    public function test_create_book_validation_errors(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/books', []);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'data' => [
+                    'title' => ['The title field is required.'],
+                    'category_id' => ['The category id field is required.'],
+                ]
+            ]);
+    }
+
+    public function test_update_book_validation_errors(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create(['author_id' => $user->id]);
+        Sanctum::actingAs($user);
+
+        $response = $this->putJson("/api/books/{$book->id}", [
+            'title' => '',
+            'category_id' => 'not-a-uuid',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'data' => [
+                    'title' => ['The title field is required.'],
+                    'category_id' => ['The category id field must be a valid UUID.'],
+                ]
+            ]);
+    }
+
+    public function test_upload_book_file_validation_errors(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create(['author_id' => $user->id]);
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson("/api/books/{$book->id}/upload", []);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'data' => [
+                    'chunk_index' => ['The chunk index field is required.'],
+                    'total_chunks' => ['The total chunks field is required.'],
+                    'file_chunk' => ['The file chunk field is required.'],
+                ]
+            ]);
     }
 }

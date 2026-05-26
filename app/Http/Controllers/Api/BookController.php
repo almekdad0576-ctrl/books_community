@@ -102,6 +102,18 @@ class BookController extends Controller
     }
 
     /**
+     * Display a listing of books.
+     */
+    public function index(Request $request)
+    {
+        $books = $this->bookService->getRecentBooks(
+            $request->query('pageSize'),
+            $request->query('pageNumber')
+        );
+        return $this->json_response(true, 200, 'Books retrieved successfully', BookResource::collection($books));
+    }
+
+    /**
      * Search books.
      */
     public function search(Request $request)
@@ -112,5 +124,18 @@ class BookController extends Controller
             $request->query('pageNumber')
         );
         return $this->json_response(true, 200, 'Books retrieved successfully', BookResource::collection($books));
+    }
+
+    /**
+     * Get books for the authenticated user.
+     */
+    public function userBooks(Request $request)
+    {
+        $books = $this->bookService->getAuthorBooks(
+            Auth::id(),
+            $request->query('pageSize'),
+            $request->query('pageNumber')
+        );
+        return $this->json_response(true, 200, 'User books retrieved successfully', BookResource::collection($books));
     }
 }

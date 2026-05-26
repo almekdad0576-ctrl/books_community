@@ -21,6 +21,7 @@ class BookFactory extends Factory
             'title' => $this->faker->sentence,
             'description' => $this->faker->paragraph,
             'author_id' => \App\Models\User::factory(),
+            'category_id' => \App\Models\Category::factory(),
             'views_num' => 0,
             'status' => BookStatus::PENDING_UPLOAD,
         ];

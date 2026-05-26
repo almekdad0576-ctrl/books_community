@@ -207,4 +207,76 @@ class AuthTest extends TestCase
             'id' => $user->id,
         ]);
     }
+
+    public function test_user_can_get_author_profile_publicly()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->getJson("/api/authors/{$user->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Author retrieved successfully',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                ]
+            ]);
+    }
+
+    public function test_register_validation_errors()
+    {
+        $response = $this->postJson('/api/register', []);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'data' => [
+                    'name' => ['The name field is required.'],
+                    'email' => ['The email field is required.'],
+                    'password' => ['The password field is required.'],
+                ]
+            ]);
+    }
+
+    public function test_login_validation_errors()
+    {
+        $response = $this->postJson('/api/login', []);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'data' => [
+                    'email' => ['The email field is required.'],
+                    'password' => ['The password field is required.'],
+                ]
+            ]);
+    }
+
+    public function test_update_profile_validation_errors()
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->putJson('/api/user', [
+            'email' => 'not-an-email',
+            'password' => 'short',
+        ], [
+            'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'data' => [
+                    'email' => ['The email field must be a valid email address.'],
+                    'password' => ['The password field must be at least 6 characters.'],
+                ]
+            ]);
+    }
 }

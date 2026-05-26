@@ -17,6 +17,7 @@ class Book extends Model
         'title',
         'description',
         'author_id',
+        'category_id',
         'views_num',
         'status',
     ];
@@ -24,6 +25,14 @@ class Book extends Model
     protected $casts = [
         'status' => BookStatus::class,
     ];
+
+    /**
+     * Get the category that owns the book.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     /**
      * Get the author that owns the book.
