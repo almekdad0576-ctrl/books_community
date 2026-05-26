@@ -9,8 +9,6 @@ use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\UpdateUserRequest;
 use App\Http\Resources\UserResource;
-use App\Exceptions\UserNotFoundException;
-use App\Exceptions\PasswordMismatchException;
 
 class AuthController extends Controller
 {
@@ -32,15 +30,11 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        try {
-            $token = $this->authService->login($request->validated());
+        $token = $this->authService->login($request->validated());
 
-            return $this->json_response(true, 200, 'Login successful', [
-                'token' => $token,
-            ]);
-        } catch (UserNotFoundException | PasswordMismatchException $e) {
-            return $this->json_response(false, 401, $e->getMessage());
-        }
+        return $this->json_response(true, 200, 'Login successful', [
+            'token' => $token,
+        ]);
     }
 
     public function getProfile(Request $request)

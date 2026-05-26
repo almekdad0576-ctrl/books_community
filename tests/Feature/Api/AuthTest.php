@@ -42,7 +42,14 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+            ->assertJson([
+                'success' => false,
+                'code' => 422,
+                'message' => 'The given data was invalid.',
+                'data' => [
+                    'email' => ['The email has already been taken.']
+                ]
+            ]);
     }
 
     public function test_user_can_login()
@@ -93,11 +100,11 @@ class AuthTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(401)
+        $response->assertStatus(404)
             ->assertJson([
                 'success' => false,
-                'code' => 401,
-                'message' => 'Email not found'
+                'code' => 404,
+                'message' => 'Resource not found'
             ]);
     }
 

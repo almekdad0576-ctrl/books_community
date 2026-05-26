@@ -1,10 +1,15 @@
 <?php
 
+use App\Helpers\Utilities;
+use App\Exceptions\PasswordMismatchException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,42 +23,56 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
+
+        // 1. Tell Laravel to treat all /api/* routes as JSON requests, 
+        // which forces native JSON errors for 404s, Auth, and Validation.
+        $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
+            return $request->is('api/*') || $request->wantsJson();
+        });
+
+        // 2. Handle your specific Custom Exception
+        $exceptions->render(function (PasswordMismatchException $e, Request $request) {
+            return Utilities::apiResponse(false, 401, $e->getMessage());
+        });
+
+        // 3. Handle Model Not Found Exception
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            return Utilities::apiResponse(false, 404, 'Resource not found');
+        });
+
+        // 4. Handle Not Found Http Exception (often converted from ModelNotFoundException)
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            return Utilities::apiResponse(false, 404, 'Resource not found');
+        });
+
+        // 5. Handle Authentication Exception
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            return Utilities::apiResponse(false, 401, 'Unauthenticated');
+        });
+
+        // 6. Catch all other unhandled API errors to normalize the output format
         $exceptions->render(function (\Throwable $e, Request $request) {
-            
-            // Only modify behavior for API routes
             if ($request->is('api/*')) {
+                
+                // Fallback details
+                $status = 500;
+                $message = 'An unexpected error occurred.';
+                $data = [];
 
-                // 1. Automatically ignore ALL HTTP client-side errors (400 up to 499)
-                if ($e instanceof HttpExceptionInterface && $e->getStatusCode() < 500) {
-                    return null;
+                // If it's a standard HTTP exception (like a 403 or 405), pull its code
+                if ($e instanceof HttpExceptionInterface) {
+                    $status = $e->getStatusCode();
+                    $message = $e->getMessage() ?: $message;
+                } 
+                // Catch any stray Validation errors if they bypassed native handling
+                elseif ($e instanceof ValidationException) {
+                    $status = 422;
+                    $message = 'The given data was invalid.';
+                    $data = $e->errors();
                 }
 
-                // 2. Ignore specific core Laravel client-side exceptions
-                $ignoredExceptions = [
-                    \Illuminate\Validation\ValidationException::class,
-                    \Illuminate\Auth\AuthenticationException::class,
-                    \Illuminate\Auth\Access\AuthorizationException::class,
-                    \Illuminate\Database\Eloquent\ModelNotFoundException::class,
-                ];
-
-                foreach ($ignoredExceptions as $exceptionClass) {
-                    if ($e instanceof $exceptionClass) {
-                        return null; // Fallback to Laravel's default clean JSON response
-                    }
-                }
-
-                // 3. If it gets here, it's a true, unexpected 500 Server Error (e.g. DB crash, Code Typos)
-                Log::error('API Error: ' . $e->getMessage(), [
-                    'url'       => $request->fullUrl(),
-                    'method'    => $request->method(),
-                    'input'     => $request->except(['password', 'password_confirmation']),
-                    'exception' => $e,
-                ]);
-
-                return response()->json([
-                    'message' => 'An unexpected error occurred.',
-                    'error'   => config('app.debug') ? $e->getMessage() : 'Internal Server Error'
-                ], 500);
+                return Utilities::apiResponse(false, $status, $message, $data);
             }
         });
+
     })->create();

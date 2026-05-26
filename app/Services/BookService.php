@@ -7,6 +7,7 @@ use App\Models\File;
 use App\Enums\EntityType;
 use App\Enums\FileType;
 use App\Enums\BookStatus;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 

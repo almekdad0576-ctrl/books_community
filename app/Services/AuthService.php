@@ -6,8 +6,8 @@ use App\Models\User;
 use App\Models\File;
 use App\Enums\EntityType;
 use App\Enums\FileType;
-use App\Exceptions\UserNotFoundException;
 use App\Exceptions\PasswordMismatchException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -47,9 +47,7 @@ class AuthService
     public function login(array $data)
     {
         // Check if the user exists
-        $author = User::where('email', $data['email'])->first();
-        if (!$author) 
-            throw new UserNotFoundException('Email not found');
+        $author = User::where('email', $data['email'])->firstOrFail();
 
         // Check if the password is correct
         if (!Hash::check($data['password'], $author->password)) 
