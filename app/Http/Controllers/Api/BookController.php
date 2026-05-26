@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreBookRequest;
 use App\Http\Requests\Api\UpdateBookRequest;
+use App\Http\Requests\Api\UploadBookFileRequest;
+use App\Http\Resources\BookResource;
 use App\Services\BookService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
@@ -19,41 +22,49 @@ class BookController extends Controller
     }
 
     /**
+     * Upload book file in chunks.
+     */
+    public function upload(UploadBookFileRequest $request, string $id)
+    {
+        $book = $this->bookService->uploadBookFile(
+            $id,
+            Auth::id(),
+            $request->file('file_chunk'),
+            $request->input('chunk_index'),
+            $request->input('total_chunks')
+        );
+
+        return $this->json_response(true, 200, 'Chunk uploaded successfully', new BookResource($book));
+    }
+
+    /**
      * Store a newly created book in storage.
      */
-    public function store(StoreBookRequest $request): JsonResponse
+    public function store(StoreBookRequest $request)
     {
         $book = $this->bookService->createBook($request->validated(), Auth::id());
 
-        return response()->json([
-            'message' => 'Book created successfully',
-            'data' => $book,
-        ], 201);
+        return $this->json_response(true, 201, 'Book created successfully', new BookResource($book));
     }
 
     /**
      * Display the specified book.
      */
-    public function show(string $id): JsonResponse
+    public function show(string $id)
     {
         $book = $this->bookService->getBook($id, Auth::id());
 
-        return response()->json([
-            'data' => $book,
-        ]);
+        return $this->json_response(true, 200, 'Book retrieved successfully', new BookResource($book));
     }
 
     /**
      * Update the specified book in storage.
      */
-    public function update(UpdateBookRequest $request, string $id): JsonResponse
+    public function update(UpdateBookRequest $request, string $id)
     {
         $book = $this->bookService->updateBook($id, $request->validated(), Auth::id());
 
-        return response()->json([
-            'message' => 'Book updated successfully',
-            'data' => $book,
-        ]);
+        return $this->json_response(true, 200, 'Book updated successfully', new BookResource($book));
     }
 
     /**
@@ -63,8 +74,6 @@ class BookController extends Controller
     {
         $this->bookService->deleteBook($id, Auth::id());
 
-        return response()->json([
-            'message' => 'Book deleted successfully',
-        ]);
+        return $this->json_response(true, 200, 'Book deleted successfully');
     }
 }

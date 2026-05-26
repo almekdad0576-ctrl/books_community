@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,6 +22,7 @@ class BookFactory extends Factory
             'description' => $this->faker->paragraph,
             'author_id' => \App\Models\User::factory(),
             'views_num' => 0,
+            'status' => BookStatus::PENDING_UPLOAD,
         ];
     }
 }

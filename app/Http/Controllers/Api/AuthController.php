@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Exceptions\UserNotFoundException;
 use App\Exceptions\PasswordMismatchException;
 
@@ -24,10 +25,9 @@ class AuthController extends Controller
     {
         $token = $this->authService->registerAuthor($request->validated());
 
-        return response()->json([
+        return $this->json_response(true, 201, 'User registered successfully', [
             'token' => $token,
-            'message' => 'User registered successfully'
-        ], 201);
+        ]);
     }
 
     public function login(LoginRequest $request)
@@ -35,47 +35,37 @@ class AuthController extends Controller
         try {
             $token = $this->authService->login($request->validated());
 
-            return response()->json([
+            return $this->json_response(true, 200, 'Login successful', [
                 'token' => $token,
-                'message' => 'Login successful'
             ]);
         } catch (UserNotFoundException | PasswordMismatchException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 401);
+            return $this->json_response(false, 401, $e->getMessage());
         }
     }
 
     public function getProfile(Request $request)
     {
-        return response()->json($request->user());
+        return $this->json_response(true, 200, 'Profile retrieved successfully', new UserResource($request->user()));
     }
 
     public function logout(Request $request)
     {
         $this->authService->logout($request->user());
 
-        return response()->json([
-            'message' => 'Successfully logged out'
-        ]);
+        return $this->json_response(true, 200, 'Successfully logged out');
     }
 
     public function update(UpdateUserRequest $request)
     {
         $user = $this->authService->updateUser($request->user(), $request->validated());
 
-        return response()->json([
-            'user' => $user,
-            'message' => 'User updated successfully'
-        ]);
+        return $this->json_response(true, 200, 'User updated successfully', new UserResource($user));
     }
 
     public function destroy(Request $request)
     {
         $this->authService->deleteUser($request->user());
 
-        return response()->json([
-            'message' => 'User deleted successfully'
-        ]);
+        return $this->json_response(true, 200, 'User deleted successfully');
     }
 }

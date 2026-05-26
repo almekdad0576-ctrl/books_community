@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,6 +18,11 @@ class Book extends Model
         'description',
         'author_id',
         'views_num',
+        'status',
+    ];
+
+    protected $casts = [
+        'status' => BookStatus::class,
     ];
 
     /**

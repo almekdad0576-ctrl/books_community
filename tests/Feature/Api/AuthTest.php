@@ -19,7 +19,12 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['token', 'message']);
+            ->assertJsonStructure([
+                'success',
+                'code',
+                'message',
+                'data' => ['token']
+            ]);
 
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
@@ -53,7 +58,12 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['token', 'message']);
+            ->assertJsonStructure([
+                'success',
+                'code',
+                'message',
+                'data' => ['token']
+            ]);
     }
 
     public function test_user_cannot_login_with_wrong_password()
@@ -69,7 +79,11 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(401)
-            ->assertJson(['message' => 'Password is incorrect']);
+            ->assertJson([
+                'success' => false,
+                'code' => 401,
+                'message' => 'Password is incorrect'
+            ]);
     }
 
     public function test_user_cannot_login_if_not_found()
@@ -80,7 +94,11 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(401)
-            ->assertJson(['message' => 'Email not found']);
+            ->assertJson([
+                'success' => false,
+                'code' => 401,
+                'message' => 'Email not found'
+            ]);
     }
 
     public function test_authenticated_user_can_get_profile()
@@ -94,8 +112,12 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'id' => $user->id,
-                'email' => $user->email,
+                'success' => true,
+                'code' => 200,
+                'data' => [
+                    'id' => $user->id,
+                    'email' => $user->email,
+                ]
             ]);
     }
 
@@ -109,7 +131,11 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJson(['message' => 'Successfully logged out']);
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Successfully logged out'
+            ]);
 
         $this->assertCount(0, $user->tokens);
     }
@@ -138,8 +164,10 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
+                'success' => true,
+                'code' => 200,
                 'message' => 'User updated successfully',
-                'user' => [
+                'data' => [
                     'name' => 'New Name',
                     'email' => 'new@example.com',
                 ]
@@ -162,7 +190,11 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJson(['message' => 'User deleted successfully']);
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'User deleted successfully'
+            ]);
 
         $this->assertDatabaseMissing('users', [
             'id' => $user->id,

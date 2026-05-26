@@ -14,4 +14,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/user', [AuthController::class, 'destroy']);
 
     Route::apiResource('books', BookController::class);
+    Route::post('/books/{id}/upload', [BookController::class, 'upload']);
 });

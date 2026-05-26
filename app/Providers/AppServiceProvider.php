@@ -7,6 +7,7 @@ use App\Services\AuthService;
 use App\Services\BookService;
 use Laravel\Sanctum\Sanctum;
 use App\Models\PersonalAccessToken;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,5 +31,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        JsonResource::withoutWrapping();
     }
 }
