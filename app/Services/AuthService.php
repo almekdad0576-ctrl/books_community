@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\File;
 use App\Enums\EntityType;
+use App\Enums\FileType;
 use App\Exceptions\UserNotFoundException;
 use App\Exceptions\PasswordMismatchException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AuthService
 {
@@ -32,6 +34,7 @@ class AuthService
                 File::create([
                     'entity_id' => $author->id,
                     'entity_type' => EntityType::USER,
+                    'type' => FileType::IMAGE,
                     'path' => $path,
                 ]);
             }
@@ -81,6 +84,7 @@ class AuthService
                 // Delete old image if exists
                 $oldFile = File::where('entity_id', $user->id)
                     ->where('entity_type', EntityType::USER)
+                    ->where('type', FileType::IMAGE)
                     ->first();
 
                 if ($oldFile) {
@@ -93,6 +97,7 @@ class AuthService
                 File::create([
                     'entity_id' => $user->id,
                     'entity_type' => EntityType::USER,
+                    'type' => FileType::IMAGE,
                     'path' => $path,
                 ]);
             }
@@ -107,6 +112,7 @@ class AuthService
             // Delete associated file/image
             $file = File::where('entity_id', $user->id)
                 ->where('entity_type', EntityType::USER)
+                ->where('type', FileType::IMAGE)
                 ->first();
 
             if ($file) {
