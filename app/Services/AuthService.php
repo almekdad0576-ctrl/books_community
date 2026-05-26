@@ -125,4 +125,12 @@ class AuthService
             $user->delete();
         });
     }
+
+    /**
+     * Get a user by their ID.
+     */
+    public function getUserById(string $id): User
+    {
+        return User::findOrFail($id);
+    }
 }

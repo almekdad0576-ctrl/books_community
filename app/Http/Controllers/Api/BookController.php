@@ -76,4 +76,41 @@ class BookController extends Controller
 
         return $this->json_response(true, 200, 'Book deleted successfully');
     }
+
+    /**
+     * Get popular books.
+     */
+    public function popular(Request $request)
+    {
+        $books = $this->bookService->getPopularBooks(
+            $request->query('pageSize'),
+            $request->query('pageNumber')
+        );
+        return $this->json_response(true, 200, 'Popular books retrieved successfully', BookResource::collection($books));
+    }
+
+    /**
+     * Get recent books.
+     */
+    public function recent(Request $request)
+    {
+        $books = $this->bookService->getRecentBooks(
+            $request->query('pageSize'),
+            $request->query('pageNumber')
+        );
+        return $this->json_response(true, 200, 'Recent books retrieved successfully', BookResource::collection($books));
+    }
+
+    /**
+     * Search books.
+     */
+    public function search(Request $request)
+    {
+        $books = $this->bookService->searchBooks(
+            $request->query('query'),
+            $request->query('pageSize'),
+            $request->query('pageNumber')
+        );
+        return $this->json_response(true, 200, 'Books retrieved successfully', BookResource::collection($books));
+    }
 }

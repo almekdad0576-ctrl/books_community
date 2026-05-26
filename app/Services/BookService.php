@@ -108,6 +108,57 @@ class BookService
     }
 
     /**
+     * Get popular books ordered by views_num.
+     */
+    public function getPopularBooks($pageSize = null, $pageNumber = null)
+    {
+        $pageSize = (int) ($pageSize ?? 10);
+        $pageNumber = (int) ($pageNumber ?? 1);
+
+        $offset = ($pageNumber - 1) * $pageSize;
+        return Book::orderBy('views_num', 'desc')
+            ->offset($offset)
+            ->limit($pageSize)
+            ->get();
+    }
+
+    /**
+     * Get recent books ordered by created_at.
+     */
+    public function getRecentBooks($pageSize = null, $pageNumber = null)
+    {
+        $pageSize = (int) ($pageSize ?? 10);
+        $pageNumber = (int) ($pageNumber ?? 1);
+
+        $offset = ($pageNumber - 1) * $pageSize;
+        return Book::orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($pageSize)
+            ->get();
+    }
+
+    /**
+     * Search books by title or author name.
+     */
+    public function searchBooks(?string $query, $pageSize = null, $pageNumber = null)
+    {
+        $pageSize = (int) ($pageSize ?? 10);
+        $pageNumber = (int) ($pageNumber ?? 1);
+
+        $offset = ($pageNumber - 1) * $pageSize;
+        return Book::query()
+            ->when($query, function ($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%")
+                  ->orWhereHas('author', function ($q) use ($query) {
+                      $q->where('name', 'like', "%{$query}%");
+                  });
+            })
+            ->offset($offset)
+            ->limit($pageSize)
+            ->get();
+    }
+
+    /**
      * Update a book.
      */
     public function updateBook(string $id, array $data, string $authorId): Book

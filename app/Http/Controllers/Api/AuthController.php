@@ -62,4 +62,13 @@ class AuthController extends Controller
 
         return $this->json_response(true, 200, 'User deleted successfully');
     }
+
+    /**
+     * Get author by ID.
+     */
+    public function show(string $id)
+    {
+        $user = $this->authService->getUserById($id);
+        return $this->json_response(true, 200, 'Author retrieved successfully', new UserResource($user));
+    }
 }
