@@ -7,6 +7,7 @@ use App\Services\AuthService;
 use Illuminate\Http\Request;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Requests\Api\LoginRequest;
+use App\Http\Requests\Api\UpdateUserRequest;
 use App\Exceptions\UserNotFoundException;
 use App\Exceptions\PasswordMismatchException;
 
@@ -48,5 +49,33 @@ class AuthController extends Controller
     public function getProfile(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    public function logout(Request $request)
+    {
+        $this->authService->logout($request->user());
+
+        return response()->json([
+            'message' => 'Successfully logged out'
+        ]);
+    }
+
+    public function update(UpdateUserRequest $request)
+    {
+        $user = $this->authService->updateUser($request->user(), $request->validated());
+
+        return response()->json([
+            'user' => $user,
+            'message' => 'User updated successfully'
+        ]);
+    }
+
+    public function destroy(Request $request)
+    {
+        $this->authService->deleteUser($request->user());
+
+        return response()->json([
+            'message' => 'User deleted successfully'
+        ]);
     }
 }

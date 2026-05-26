@@ -99,10 +99,73 @@ class AuthTest extends TestCase
             ]);
     }
 
+    public function test_user_can_logout()
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->postJson('/api/logout', [], [
+            'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Successfully logged out']);
+
+        $this->assertCount(0, $user->tokens);
+    }
+
     public function test_unauthenticated_user_cannot_get_profile()
     {
         $response = $this->getJson('/api/user');
 
         $response->assertStatus(401);
+    }
+
+    public function test_user_can_update_profile()
+    {
+        $user = User::factory()->create([
+            'name' => 'Old Name',
+            'email' => 'old@example.com',
+        ]);
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->putJson('/api/user', [
+            'name' => 'New Name',
+            'email' => 'new@example.com',
+        ], [
+            'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => 'User updated successfully',
+                'user' => [
+                    'name' => 'New Name',
+                    'email' => 'new@example.com',
+                ]
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'New Name',
+            'email' => 'new@example.com',
+        ]);
+    }
+
+    public function test_user_can_delete_profile()
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->deleteJson('/api/user', [], [
+            'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'User deleted successfully']);
+
+        $this->assertDatabaseMissing('users', [
+            'id' => $user->id,
+        ]);
     }
 }
