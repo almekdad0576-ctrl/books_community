@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Book extends Model
 {
@@ -20,6 +21,7 @@ class Book extends Model
         'category_id',
         'views_num',
         'status',
+        'comment_count',
     ];
 
     protected $casts = [
@@ -49,5 +51,13 @@ class Book extends Model
     {
         return $this->belongsToMany(User::class, 'book_views', 'book_id', 'user_id')
                     ->withTimestamps();
+    }
+
+    /**
+     * Get the comments for the book.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
     }
 }

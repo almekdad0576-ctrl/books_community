@@ -7,6 +7,7 @@ use App\Http\Requests\Api\StoreBookRequest;
 use App\Http\Requests\Api\UpdateBookRequest;
 use App\Http\Requests\Api\UploadBookFileRequest;
 use App\Http\Resources\BookResource;
+use App\Models\Book;
 use App\Services\BookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,11 +25,11 @@ class BookController extends Controller
     /**
      * Upload book file in chunks.
      */
-    public function upload(UploadBookFileRequest $request, string $id)
+    public function upload(UploadBookFileRequest $request, Book $book)
     {
+        $this->authorize('update', $book);
         $book = $this->bookService->uploadBookFile(
-            $id,
-            Auth::id(),
+            $book,
             $request->file('file_chunk'),
             $request->input('chunk_index'),
             $request->input('total_chunks')
@@ -60,9 +61,10 @@ class BookController extends Controller
     /**
      * Update the specified book in storage.
      */
-    public function update(UpdateBookRequest $request, string $id)
+    public function update(UpdateBookRequest $request, Book $book)
     {
-        $book = $this->bookService->updateBook($id, $request->validated(), Auth::id());
+        $this->authorize('update', $book);
+        $book = $this->bookService->updateBook($book, $request->validated());
 
         return $this->json_response(true, 200, 'Book updated successfully', new BookResource($book));
     }
@@ -70,9 +72,10 @@ class BookController extends Controller
     /**
      * Remove the specified book from storage.
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy(Book $book): JsonResponse
     {
-        $this->bookService->deleteBook($id, Auth::id());
+        $this->authorize('delete', $book);
+        $this->bookService->deleteBook($book);
 
         return $this->json_response(true, 200, 'Book deleted successfully');
     }

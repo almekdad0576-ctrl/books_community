@@ -50,7 +50,12 @@ return Application::configure(basePath: dirname(__DIR__))
             return Utilities::apiResponse(false, 401, 'Unauthenticated');
         });
 
-        // 6. Catch all other unhandled API errors to normalize the output format
+        // 6. Handle Authorization Exception
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
+            return Utilities::apiResponse(false, 403, 'This action is unauthorized.');
+        });
+
+        // 7. Catch all other unhandled API errors to normalize the output format
         $exceptions->render(function (\Throwable $e, Request $request) {
             if ($request->is('api/*')) {
                 

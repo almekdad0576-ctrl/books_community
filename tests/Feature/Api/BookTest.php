@@ -210,7 +210,12 @@ class BookTest extends TestCase
             'title' => 'Updated Title',
         ]);
 
-        $response->assertStatus(404);
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'code' => 403,
+                'message' => 'This action is unauthorized.',
+            ]);
     }
 
     public function test_author_can_delete_own_book(): void
@@ -239,7 +244,12 @@ class BookTest extends TestCase
 
         $response = $this->deleteJson("/api/books/{$book->id}");
 
-        $response->assertStatus(404);
+        $response->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'code' => 403,
+                'message' => 'This action is unauthorized.',
+            ]);
         $this->assertDatabaseHas('books', ['id' => $book->id]);
     }
 

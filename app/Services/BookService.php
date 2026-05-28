@@ -48,11 +48,9 @@ class BookService
     /**
      * Handle chunked upload for book file.
      */
-    public function uploadBookFile(string $id, string $authorId, $file, int $chunkIndex, int $totalChunks): Book
+    public function uploadBookFile(Book $book, $file, int $chunkIndex, int $totalChunks): Book
     {
-        $book = Book::where('author_id', $authorId)->findOrFail($id);
-
-        $tempPath = "temp/books/{$id}";
+        $tempPath = "temp/books/{$book->id}";
         $chunkName = "chunk_{$chunkIndex}";
         
         // Store chunk
@@ -63,7 +61,7 @@ class BookService
         
         if (count($chunks) === $totalChunks) {
             // Merge chunks
-            $finalPath = "books/{$id}/book_" . time() . "." . $file->getClientOriginalExtension();
+            $finalPath = "books/{$book->id}/book_" . time() . "." . $file->getClientOriginalExtension();
             
             $content = '';
             for ($i = 0; $i < $totalChunks; $i++) {
@@ -165,9 +163,8 @@ class BookService
     /**
      * Update a book.
      */
-    public function updateBook(string $id, array $data, string $authorId): Book
+    public function updateBook(Book $book, array $data): Book
     {
-        $book = Book::where('author_id', $authorId)->findOrFail($id);
         $book->update($data);
         return $book;
     }
@@ -175,9 +172,8 @@ class BookService
     /**
      * Delete a book.
      */
-    public function deleteBook(string $id, string $authorId): bool
+    public function deleteBook(Book $book): bool
     {
-        $book = Book::where('author_id', $authorId)->findOrFail($id);
         return $book->delete();
     }
 
