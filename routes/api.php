@@ -22,12 +22,15 @@ Route::get('/comments/{id}', [CommentController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'getProfile']);
     Route::get('/user/books', [BookController::class, 'userBooks']);
+    Route::get('/user/saved-books', [BookController::class, 'savedBooks']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/user', [AuthController::class, 'update']);
     Route::delete('/user', [AuthController::class, 'destroy']);
 
     Route::apiResource('books', BookController::class)->except(['index', 'show']);
     Route::post('/books/{book}/upload', [BookController::class, 'upload']);
+    Route::post('/books/{book}/save', [BookController::class, 'saveBook']);
+    Route::post('/books/{book}/unsave', [BookController::class, 'unsaveBook']);
 
     Route::apiResource('comments', CommentController::class)->only(['store', 'update', 'destroy']);
 });

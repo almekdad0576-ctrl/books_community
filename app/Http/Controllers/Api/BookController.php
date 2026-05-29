@@ -141,4 +141,35 @@ class BookController extends Controller
         );
         return $this->json_response(true, 200, 'User books retrieved successfully', BookResource::collection($books));
     }
+
+    /**
+     * Save a book for the authenticated user.
+     */
+    public function saveBook(Book $book)
+    {
+        $this->bookService->saveBook(Auth::id(), $book->id);
+        return $this->json_response(true, 200, 'Book saved successfully');
+    }
+
+    /**
+     * Unsave a book for the authenticated user.
+     */
+    public function unsaveBook(Book $book)
+    {
+        $this->bookService->unsaveBook(Auth::id(), $book->id);
+        return $this->json_response(true, 200, 'Book unsaved successfully');
+    }
+
+    /**
+     * Get saved books for the authenticated user.
+     */
+    public function savedBooks(Request $request)
+    {
+        $books = $this->bookService->getSavedBooks(
+            Auth::id(),
+            $request->query('pageSize'),
+            $request->query('pageNumber')
+        );
+        return $this->json_response(true, 200, 'Saved books retrieved successfully', BookResource::collection($books));
+    }
 }

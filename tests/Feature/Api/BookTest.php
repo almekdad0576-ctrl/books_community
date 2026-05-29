@@ -422,4 +422,95 @@ class BookTest extends TestCase
                 ]
             ]);
     }
+
+    public function test_user_can_save_a_book(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson("/api/books/{$book->id}/save");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Book saved successfully',
+            ]);
+
+        $this->assertDatabaseHas('book_saves', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+    }
+
+    public function test_user_can_unsave_a_book(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        Sanctum::actingAs($user);
+
+        // First save the book
+        $user->savedBooks()->attach($book->id);
+
+        $response = $this->postJson("/api/books/{$book->id}/unsave");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Book unsaved successfully',
+            ]);
+
+        $this->assertDatabaseMissing('book_saves', [
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+        ]);
+    }
+
+    public function test_user_can_get_saved_books(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $books = Book::factory()->count(3)->create();
+        foreach ($books as $book) {
+            $user->savedBooks()->attach($book->id);
+        }
+
+        $response = $this->getJson('/api/user/saved-books');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'code' => 200,
+                'message' => 'Saved books retrieved successfully',
+            ])
+            ->assertJsonCount(3, 'data');
+    }
+
+    public function test_guest_cannot_save_book(): void
+    {
+        $book = Book::factory()->create();
+
+        $response = $this->postJson("/api/books/{$book->id}/save");
+
+        $response->assertStatus(401);
+    }
+
+    public function test_guest_cannot_unsave_book(): void
+    {
+        $book = Book::factory()->create();
+
+        $response = $this->postJson("/api/books/{$book->id}/unsave");
+
+        $response->assertStatus(401);
+    }
+
+    public function test_guest_cannot_get_saved_books(): void
+    {
+        $response = $this->getJson('/api/user/saved-books');
+
+        $response->assertStatus(401);
+    }
 }

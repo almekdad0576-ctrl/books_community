@@ -54,6 +54,15 @@ class Book extends Model
     }
 
     /**
+     * The users that have saved the book.
+     */
+    public function savers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'book_saves', 'book_id', 'user_id')
+                    ->withTimestamps();
+    }
+
+    /**
      * Get the comments for the book.
      */
     public function comments(): HasMany

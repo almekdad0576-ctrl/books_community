@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Book;
+use App\Models\User;
 use App\Models\File;
 use App\Enums\EntityType;
 use App\Enums\FileType;
@@ -188,6 +189,41 @@ class BookService
         $offset = ($pageNumber - 1) * $pageSize;
         return Book::where('author_id', $authorId)
             ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($pageSize)
+            ->get();
+    }
+
+    /**
+     * Save a book for a user.
+     */
+    public function saveBook(string $userId, string $bookId): void
+    {
+        $book = Book::findOrFail($bookId);
+        $book->savers()->syncWithoutDetaching($userId);
+    }
+
+    /**
+     * Unsave a book for a user.
+     */
+    public function unsaveBook(string $userId, string $bookId): void
+    {
+        $book = Book::findOrFail($bookId);
+        $book->savers()->detach($userId);
+    }
+
+    /**
+     * Get saved books for a user with pagination.
+     */
+    public function getSavedBooks(string $userId, $pageSize = null, $pageNumber = null)
+    {
+        $pageSize = (int) ($pageSize ?? 10);
+        $pageNumber = (int) ($pageNumber ?? 1);
+
+        $offset = ($pageNumber - 1) * $pageSize;
+        return User::findOrFail($userId)
+            ->savedBooks()
+            ->orderBy('book_saves.created_at', 'desc')
             ->offset($offset)
             ->limit($pageSize)
             ->get();
