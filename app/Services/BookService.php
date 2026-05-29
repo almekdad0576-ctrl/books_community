@@ -228,4 +228,15 @@ class BookService
             ->limit($pageSize)
             ->get();
     }
+
+    /**
+     * Get the book file for a given book.
+     */
+    public function getBookFile(Book $book): ?File
+    {
+        return File::where('entity_id', $book->id)
+            ->where('entity_type', EntityType::BOOK)
+            ->where('type', FileType::DOCUMENT)
+            ->first();
+    }
 }

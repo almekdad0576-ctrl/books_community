@@ -12,6 +12,7 @@ use App\Services\BookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class BookController extends Controller
 {
@@ -171,5 +172,32 @@ class BookController extends Controller
             $request->query('pageNumber')
         );
         return $this->json_response(true, 200, 'Saved books retrieved successfully', BookResource::collection($books));
+    }
+
+    /**
+     * Download the book file using HTTP streaming.
+     */
+    public function download(Book $book)
+    {
+        $bookFile = $this->bookService->getBookFile($book);
+
+        if (!$bookFile) {
+            return $this->json_response(false, 404, 'Book file not found');
+        }
+
+        $path = $bookFile->path;
+        $fileName = basename($path);
+        $mimeType = Storage::disk('public')->mimeType($path);
+
+        return response()->stream(function () use ($path) {
+            $stream = Storage::disk('public')->readStream($path);
+            fpassthru($stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
     }
 }

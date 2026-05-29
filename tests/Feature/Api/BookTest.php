@@ -513,4 +513,51 @@ class BookTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_user_can_download_book_file(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+        
+        $user = User::factory()->create();
+        $book = Book::factory()->create(['author_id' => $user->id, 'status' => BookStatus::PENDING_UPLOAD]);
+        Sanctum::actingAs($user);
+
+        $chunk1 = UploadedFile::fake()->create('testbook.pdf', 100);
+        $chunk2 = UploadedFile::fake()->create('testbook.pdf', 100);
+
+        // Upload first chunk
+        $this->postJson("/api/books/{$book->id}/upload", [
+            'chunk_index' => 0,
+            'total_chunks' => 2,
+            'file_chunk' => $chunk1,
+        ]);
+
+        // Upload second chunk
+        $this->postJson("/api/books/{$book->id}/upload", [
+            'chunk_index' => 1,
+            'total_chunks' => 2,
+            'file_chunk' => $chunk2,
+        ]);
+
+        // Now download the book
+        $response = $this->get("/api/books/{$book->id}/download");
+
+        $response->assertStatus(200)
+            ->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_download_returns_404_when_book_file_not_found(): void
+    {
+        $book = Book::factory()->create();
+
+        $response = $this->get("/api/books/{$book->id}/download");
+
+        $response->assertStatus(404)
+            ->assertJson([
+                'success' => false,
+                'code' => 404,
+                'message' => 'Book file not found',
+            ]);
+    }
 }

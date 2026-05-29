@@ -15,6 +15,7 @@ Route::get('/books/recent', [BookController::class, 'recent']);
 Route::get('/books/search', [BookController::class, 'search']);
 Route::get('/books', [BookController::class, 'index']);
 Route::get('/books/{id}', [BookController::class, 'show']);
+Route::get('/books/{book}/download', [BookController::class, 'download']);
 
 Route::get('/comments', [CommentController::class, 'index']);
 Route::get('/comments/{id}', [CommentController::class, 'show']);
