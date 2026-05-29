@@ -19,6 +19,11 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
+    /**
+     * Register a new user.
+     * * @requestMediaType multipart/form-data
+     * @unauthenticated
+     */
     public function register(RegisterRequest $request)
     {
         $token = $this->authService->registerAuthor($request->validated());

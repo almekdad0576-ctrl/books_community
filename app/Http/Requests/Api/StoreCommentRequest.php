@@ -14,9 +14,9 @@ class StoreCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'book_id' => 'required|uuid|exists:books,id',
-            'parent_comment_id' => 'nullable|uuid|exists:comments,id',
-            'content' => 'required|string',
+            'book_id' => ['required', 'uuid', 'exists:books,id'],
+            'parent_comment_id' => ['nullable', 'uuid', 'exists:comments,id'],
+            'content' => ['required', 'string'],
         ];
     }
 }

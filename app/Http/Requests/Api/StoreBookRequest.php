@@ -22,10 +22,10 @@ class StoreBookRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'category_id' => 'required|uuid|exists:categories,id',
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'file', 'image', 'max:2048'],
+            'category_id' => ['required', 'uuid', 'exists:categories,id'],
         ];
     }
 }

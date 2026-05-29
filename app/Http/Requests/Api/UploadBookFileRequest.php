@@ -22,9 +22,9 @@ class UploadBookFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'chunk_index' => 'required|integer|min:0',
-            'total_chunks' => 'required|integer|min:1',
-            'file_chunk' => 'required|file',
+            'chunk_index' => ['required', 'integer', 'min:0'],
+            'total_chunks' => ['required', 'integer', 'min:1'],
+            'file_chunk' => ['required', 'file'],
         ];
     }
 }

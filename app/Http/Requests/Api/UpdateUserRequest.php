@@ -25,15 +25,15 @@ class UpdateUserRequest extends FormRequest
         $userId = $this->user()->id;
 
         return [
-            'name' => 'sometimes|required|string',
+            'name' => ['sometimes', 'required', 'string'],
             'email' => [
                 'sometimes',
                 'required',
                 'email',
                 Rule::unique('users', 'email')->ignore($userId),
             ],
-            'password' => 'sometimes|required|string|min:6',
-            'image' => 'nullable|image|max:2048',
+            'password' => ['sometimes', 'required', 'string', 'min:6'],
+            'image' => ['nullable', 'file', 'image', 'max:2048'],
         ];
     }
 }
