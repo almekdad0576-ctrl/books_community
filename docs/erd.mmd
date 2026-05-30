@@ -1,0 +1,142 @@
+erDiagram
+    USERS {
+        uuid id PK
+        string name
+        string email UK
+        timestamp email_verified_at
+        string password
+        string remember_token
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    
+    SESSIONS {
+        string id PK
+        uuid user_id FK
+        string ip_address
+        text user_agent
+        longText payload
+        integer last_activity
+    }
+
+    FILES {
+        uuid id PK
+        uuid entity_id
+        string entity_type
+        string type
+        text path
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CATEGORIES {
+        uuid id PK
+        string name UK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BOOKS {
+        uuid id PK
+        string title
+        text description
+        uuid author_id FK
+        uuid category_id FK
+        unsignedBigInteger views_num
+        string status
+        unsignedBigInteger comment_count
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BOOK_VIEWS {
+        id id PK
+        uuid book_id FK
+        uuid user_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    COMMENTS {
+        uuid id PK
+        uuid book_id FK
+        uuid user_id FK
+        uuid parent_comment_id FK
+        text content
+        unsignedBigInteger reply_count
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BOOK_SAVES {
+        id id PK
+        uuid user_id FK
+        uuid book_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    JOBS {
+        id id PK
+        string queue
+        longText payload
+        unsignedTinyInteger attempts
+        unsignedInteger reserved_at
+        unsignedInteger available_at
+        unsignedInteger created_at
+    }
+
+    JOB_BATCHES {
+        string id PK
+        string name
+        integer total_jobs
+        integer pending_jobs
+        integer failed_jobs
+        longText failed_job_ids
+        mediumText options
+        integer cancelled_at
+        integer created_at
+        integer finished_at
+    }
+
+    FAILED_JOBS {
+        uuid id PK
+        string uuid UK
+        text connection
+        text queue
+        longText payload
+        longText exception
+        timestamp failed_at
+    }
+
+    PASSWORD_RESET_TOKENS {
+        string email PK
+        string token
+        timestamp created_at
+    }
+
+    PERSONAL_ACCESS_TOKENS {
+        uuid id PK
+        string tokenable_type
+        uuid tokenable_id
+        text name
+        string token UK
+        text abilities
+        timestamp last_used_at
+        timestamp expires_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% Relationships
+    USERS ||--o{ SESSIONS : "has"
+    USERS ||--o{ BOOKS : "authors"
+    CATEGORIES ||--o{ BOOKS : "has"
+    BOOKS ||--o{ BOOK_VIEWS : "receives"
+    USERS ||--o{ BOOK_VIEWS : "generates"
+    BOOKS ||--o{ COMMENTS : "has"
+    USERS ||--o{ COMMENTS : "writes"
+    COMMENTS ||--o{ COMMENTS : "replies to"
+    USERS ||--o{ BOOK_SAVES : "saves"
+    BOOKS ||--o{ BOOK_SAVES : "saved by"
