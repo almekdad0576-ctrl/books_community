@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Enums\BookStatus;
 
 return new class extends Migration
 {
@@ -16,7 +17,10 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->foreignUuid('author_id')->constrained('users')->onDelete('cascade');
+            $table->foreignUuid('category_id')->nullable()->constrained('categories')->onDelete('set null');
             $table->unsignedBigInteger('views_num')->default(0);
+            $table->string('status')->default(BookStatus::PENDING_UPLOAD->value);
+            $table->unsignedBigInteger('comment_count')->default(0);
             $table->timestamps();
         });
     }
