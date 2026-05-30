@@ -38,7 +38,7 @@ class FileService
 
         // Determine path
         if ($file instanceof \Illuminate\Http\UploadedFile) {
-            $path = $file->store($directory, 'public');
+            $path = $file->store($directory);
         } else {
             // If $file is a string, assume it's already a path
             $path = $file;
@@ -66,7 +66,7 @@ class FileService
             ->first();
 
         if ($file) {
-            Storage::disk('public')->delete($file->path);
+            Storage::delete($file->path);
             $file->delete();
         }
     }
@@ -131,8 +131,8 @@ class FileService
             $filename = uniqid() . '.' . $extension;
             $finalPath = $directory . '/' . $filename;
             
-            // Store final file on public disk
-            Storage::disk('public')->put($finalPath, $content);
+            // Store final file on default disk
+            Storage::put($finalPath, $content);
             
             // Clean up temp directory
             Storage::disk('local')->deleteDirectory($tempPath);

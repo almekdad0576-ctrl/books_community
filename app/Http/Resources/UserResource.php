@@ -27,7 +27,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'image_url' => $imageFile ? Storage::disk('public')->url($imageFile->path) : null,
+            'image_url' => $imageFile ? Storage::url($imageFile->path) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

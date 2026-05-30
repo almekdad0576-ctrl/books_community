@@ -187,10 +187,10 @@ class BookController extends Controller
 
         $path = $bookFile->path;
         $fileName = basename($path);
-        $mimeType = Storage::disk('public')->mimeType($path);
-
+        $mimeType = Storage::mimeType($path);
+        
         return response()->stream(function () use ($path) {
-            $stream = Storage::disk('public')->readStream($path);
+            $stream = Storage::readStream($path);
             fpassthru($stream);
             if (is_resource($stream)) {
                 fclose($stream);

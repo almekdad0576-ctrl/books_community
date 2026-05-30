@@ -38,8 +38,8 @@ class BookResource extends JsonResource
             'category_name' => $this->category?->name,
             'status' => $this->status,
             'views_num' => $this->views_num,
-            'cover_url' => $coverFile ? Storage::disk('public')->url($coverFile->path) : null,
-            'book_file_url' => $bookFile ? Storage::disk('public')->url($bookFile->path) : null,
+            'cover_url' => $coverFile ? Storage::url($coverFile->path) : null,
+            'book_file_url' => $bookFile ? Storage::url($bookFile->path) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
