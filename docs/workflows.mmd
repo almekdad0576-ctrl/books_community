@@ -1,0 +1,42 @@
+flowchart TD
+    %% =======================
+    %% Left Column Flow
+    %% =======================
+    R[Routing] --> M[Middleware authorization]
+    M --> C1[Controller]
+    C1 --> DV[Data Validation using FormRequest class]
+    DV --> BLA{need Business<br>logic<br>authorization?}
+    BLA -->|yes| AuthP[Authorization using Policy class]
+    BLA -->|no| HDM[handle data management<br>using Services]
+    AuthP --> HDM
+    HDM --> HDA[handle data access using Eloquent models]
+    HDA --> DB[(Database1)]
+
+    %% =======================
+    %% Middle Column Flow
+    %% =======================
+    SF([successful flow]) --> SE{is there<br>sideeffects?}
+    SE --> MOD[model]
+    MOD --> SRV[service]
+    SRV --> C2[controller]
+    C2 --> NSS{need specific<br>shape for<br>response?}
+    NSS -->|yes| SRR[shaping response using Resource classes]
+    NSS -->|no| DJR[Default JsonResource class]
+    SRR --> RR1([return response])
+    DJR --> RR1
+
+    %% =======================
+    %% Right Column Flow
+    %% =======================
+    SFE([system failed raises exception]) --> Handler
+
+    subgraph Handler [laravel builtin global exception handler]
+        direction TB
+        HBLE[handle business logic exceptions] --> HAE[handle authentication exception]
+        HAE --> HAZE[handle authorization exception]
+        HAZE --> HVE[handle validation exceptions]
+        HVE --> HHE[handle http exception]
+        HHE --> FBH[fallback to handle any api exception]
+    end
+
+    Handler --> RR2([return response])
