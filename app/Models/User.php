@@ -74,4 +74,12 @@ class User extends Authenticatable
         return $this->belongsToMany(Book::class, 'book_saves', 'user_id', 'book_id')
                     ->withTimestamps();
     }
+
+    /**
+     * Get the files associated with the user.
+     */
+    public function files(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(File::class, 'entity');
+    }
 }

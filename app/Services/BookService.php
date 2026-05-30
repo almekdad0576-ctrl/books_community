@@ -8,12 +8,17 @@ use App\Models\File;
 use App\Enums\EntityType;
 use App\Enums\FileType;
 use App\Enums\BookStatus;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class BookService
 {
+    protected FileService $fileService;
+
+    public function __construct(FileService $fileService)
+    {
+        $this->fileService = $fileService;
+    }
     /**
      * Create a new book.
      */
@@ -32,14 +37,7 @@ class BookService
             ]);
 
             if ($image) {
-                $path = $image->store('books/covers', 'public');
-                
-                File::create([
-                    'entity_id' => $book->id,
-                    'entity_type' => EntityType::BOOK,
-                    'type' => FileType::IMAGE,
-                    'path' => $path,
-                ]);
+                $this->fileService->attachToBook($book, $image, FileType::IMAGE);
             }
 
             return $book;
@@ -51,38 +49,10 @@ class BookService
      */
     public function uploadBookFile(Book $book, $file, int $chunkIndex, int $totalChunks): Book
     {
-        $tempPath = "temp/books/{$book->id}";
-        $chunkName = "chunk_{$chunkIndex}";
+        $allChunksUploaded = $this->fileService->uploadChunk($book, $file, FileType::DOCUMENT, $chunkIndex, $totalChunks);
         
-        // Store chunk
-        Storage::disk('local')->putFileAs($tempPath, $file, $chunkName);
-
-        // Check if all chunks are uploaded
-        $chunks = Storage::disk('local')->files($tempPath);
-        
-        if (count($chunks) === $totalChunks) {
-            // Merge chunks
-            $finalPath = "books/{$book->id}/book_" . time() . "." . $file->getClientOriginalExtension();
-            
-            $content = '';
-            for ($i = 0; $i < $totalChunks; $i++) {
-                $chunkPath = "{$tempPath}/chunk_{$i}";
-                $content .= Storage::disk('local')->get($chunkPath);
-                Storage::disk('local')->delete($chunkPath);
-            }
-            
-            Storage::disk('public')->put($finalPath, $content);
-            Storage::disk('local')->deleteDirectory($tempPath);
-
-            // Create file record and update book status
-            DB::transaction(function () use ($book, $finalPath) {
-                File::create([
-                    'entity_id' => $book->id,
-                    'entity_type' => EntityType::BOOK,
-                    'type' => FileType::DOCUMENT,
-                    'path' => $finalPath,
-                ]);
-
+        if ($allChunksUploaded) {
+            DB::transaction(function () use ($book) {
                 $book->update(['status' => BookStatus::ACTIVE]);
             });
         }

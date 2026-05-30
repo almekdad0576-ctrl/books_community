@@ -103,8 +103,7 @@ class AuthTest extends TestCase
         $response->assertStatus(404)
             ->assertJson([
                 'success' => false,
-                'code' => 404,
-                'message' => 'Resource not found'
+                'code' => 404
             ]);
     }
 

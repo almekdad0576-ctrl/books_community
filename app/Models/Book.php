@@ -69,4 +69,12 @@ class Book extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    /**
+     * Get the files associated with the book.
+     */
+    public function files(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(File::class, 'entity');
+    }
 }

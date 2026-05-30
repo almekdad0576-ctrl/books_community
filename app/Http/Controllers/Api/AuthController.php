@@ -21,7 +21,7 @@ class AuthController extends Controller
 
     /**
      * Register a new user.
-     * * @requestMediaType multipart/form-data
+     * @requestMediaType multipart/form-data
      * @unauthenticated
      */
     public function register(RegisterRequest $request)

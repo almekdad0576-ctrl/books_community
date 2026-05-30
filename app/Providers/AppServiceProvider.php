@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Services\AuthService;
 use App\Services\BookService;
 use App\Services\CommentService;
+use App\Services\FileService;
 use Laravel\Sanctum\Sanctum;
 use App\Models\Book;
 use App\Models\PersonalAccessToken;
@@ -28,12 +29,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(FileService::class);
+
         $this->app->singleton(AuthService::class, function ($app) {
-            return new AuthService();
+            return new AuthService($app->make(FileService::class));
         });
 
         $this->app->singleton(BookService::class, function ($app) {
-            return new BookService();
+            return new BookService($app->make(FileService::class));
         });
 
         $this->app->singleton(CommentService::class, function ($app) {
