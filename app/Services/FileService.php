@@ -13,6 +13,21 @@ use Exception;
 
 class FileService
 {
+    protected array $directories;
+
+    public function __construct()
+    {
+        $this->directories = [
+            EntityType::USER->value => [
+                FileType::IMAGE->value => 'users',
+            ],
+            EntityType::BOOK->value => [
+                FileType::IMAGE->value => 'books/covers',
+                FileType::DOCUMENT->value => 'books/',
+            ],
+        ];
+    }
+
     public function attachToUser(User $user, $file, FileType $type): File
     {
         $directory = $this->getDefaultDirectory(EntityType::USER, $type);
@@ -26,12 +41,29 @@ class FileService
     }
 
     /**
+     * Ensure a directory exists on the default disk.
+     *
+     * @throws Exception If directory cannot be created
+     */
+    protected function ensureDirectoryExists(string $directory): void
+    {
+        if (!Storage::exists($directory)) {
+            if (!Storage::makeDirectory($directory)) {
+                throw new Exception("Failed to create directory: {$directory}");
+            }
+        }
+    }
+
+    /**
      * Attach a file to a model (internal use).
      */
     protected function attach(Model $model, $file, FileType $type, string $directory): File
     {
         // Determine entity type based on model
         $entityType = $this->getEntityType($model);
+        
+        // Ensure directory exists
+        $this->ensureDirectoryExists($directory);
         
         // Detach existing file of the same type
         $this->detach($model, $type);
@@ -90,12 +122,17 @@ class FileService
      */
     protected function getDefaultDirectory(EntityType $entityType, FileType $fileType): string
     {
-        return match ([$entityType, $fileType]) {
-            [EntityType::USER, FileType::IMAGE] => 'users',
-            [EntityType::BOOK, FileType::IMAGE] => 'books/covers',
-            [EntityType::BOOK, FileType::DOCUMENT] => 'books/' . uniqid(),
-            default => 'others',
-        };
+        $entityValue = $entityType->value;
+        $fileValue = $fileType->value;
+        
+        if (isset($this->directories[$entityValue][$fileValue])) {
+            $dir = $this->directories[$entityValue][$fileValue];
+            if ($entityType === EntityType::BOOK && $fileType === FileType::DOCUMENT) {
+                return $dir . uniqid();
+            }
+            return $dir;
+        }
+        return 'others';
     }
 
     /**
@@ -108,41 +145,107 @@ class FileService
         $tempPath = "{$entityType->value}_temp/{$model->id}";
         $chunkName = "chunk_{$chunkIndex}";
         
+        // 1. LOG INCOMING FILE: Verify PHP actually received a valid file chunk
+        info("--- CHUNK UPLOAD STARTED ---", [
+            'chunk_index' => $chunkIndex,
+            'total_expected' => $totalChunks,
+            'is_valid_file' => $fileChunk ? $fileChunk->isValid() : false,
+            'chunk_size_bytes' => $fileChunk ? $fileChunk->getSize() : 0,
+            'upload_error' => $fileChunk ? $fileChunk->getError() : 'No file object received',
+        ]);
+
+        if (!$fileChunk || !$fileChunk->isValid()) {
+            info("ERROR: Invalid file chunk rejected by PHP.", [
+                'error_message' => $fileChunk ? $fileChunk->getErrorMessage() : 'Null chunk'
+            ]);
+            return false;
+        }
+
         // Store chunk on local disk
         Storage::disk('local')->putFileAs($tempPath, $fileChunk, $chunkName);
+        info("Chunk successfully written to disk", ['path' => "$tempPath/$chunkName"]);
         
         // Check if all chunks are uploaded
         $chunks = Storage::disk('local')->files($tempPath);
+        $validChunks = array_filter($chunks, fn($c) => !str_contains($c, 'merged.tmp'));
+        $currentChunkCount = count($validChunks);
         
-        if (count($chunks) === $totalChunks) {
-            // Get directory for final file
-            $directory = $this->getDefaultDirectory($entityType, $type);
+        info("Checking merge condition", [
+            'current_valid_chunks' => $currentChunkCount,
+            'total_expected_chunks' => $totalChunks
+        ]);
+
+        if ($currentChunkCount === $totalChunks) {
+            info("All chunks received! Starting stream merge process.");
             
+            $directory = $this->getDefaultDirectory($entityType, $type);
+            $this->ensureDirectoryExists($directory);
+            
+            $mergedTempPath = "{$tempPath}/merged.tmp";
+            $mergedTempAbsolute = Storage::disk('local')->path($mergedTempPath);
+            $mergeStream = fopen($mergedTempAbsolute, 'a+');
+            
+            if (!$mergeStream) {
+                info("CRITICAL ERROR: PHP failed to open the merge stream.", ['path' => $mergedTempAbsolute]);
+                return false;
+            }
+
             // Merge all chunks
-            $content = '';
-            for ($i = 0; $i < $totalChunks; $i++) {
+            for ($i = 1; $i <= $totalChunks; $i++) {
                 $chunkPath = "{$tempPath}/chunk_{$i}";
-                $content .= Storage::disk('local')->get($chunkPath);
-                Storage::disk('local')->delete($chunkPath);
+                
+                if (!Storage::disk('local')->exists($chunkPath)) {
+                    info("ERROR: Missing chunk during merge loop.", ['missing' => $chunkPath]);
+                    fclose($mergeStream);
+                    return false; 
+                }
+
+                $chunkAbsolute = Storage::disk('local')->path($chunkPath);
+                $chunkStream = fopen($chunkAbsolute, 'r');
+                
+                if (!$chunkStream) {
+                    info("ERROR: Could not read chunk.", ['chunk' => $chunkAbsolute]);
+                    fclose($mergeStream);
+                    return false;
+                }
+
+                stream_copy_to_stream($chunkStream, $mergeStream);
+                fclose($chunkStream);
+                info("Merged chunk $i.");
             }
             
+            fclose($mergeStream);
+            info("Merge complete.", ['merged_file_size_bytes' => filesize($mergedTempAbsolute)]);
+            
             // Generate final file path
-            $extension = $fileChunk->getClientOriginalExtension();
+            // Fallback to 'bin' in case chunking strips the original extension
+            $extension = $fileChunk->getClientOriginalExtension() ?: 'bin';
             $filename = uniqid() . '.' . $extension;
             $finalPath = $directory . '/' . $filename;
             
             // Store final file on default disk
-            Storage::put($finalPath, $content);
+            $finalUploadStream = fopen($mergedTempAbsolute, 'r');
+            Storage::put($finalPath, $finalUploadStream);
+            fclose($finalUploadStream);
             
+            info("Final file saved to main storage.", [
+                'final_path' => $finalPath,
+                'exists' => Storage::exists($finalPath),
+                'final_size' => Storage::size($finalPath)
+            ]);
+
             // Clean up temp directory
             Storage::disk('local')->deleteDirectory($tempPath);
+            info("Temp directory wiped.", ['deleted' => $tempPath]);
             
             // Attach the file to the model
             $this->attach($model, $finalPath, $type, $directory);
             
+            info("--- UPLOAD AND ATTACH COMPLETE ---");
             return true;
         }
         
+        info("Chunk $chunkIndex processed successfully. Waiting for remaining chunks.");
         return false;
     }
 }

@@ -24,7 +24,7 @@ class UploadBookFileRequest extends FormRequest
         return [
             'chunk_index' => ['required', 'integer', 'min:0'],
             'total_chunks' => ['required', 'integer', 'min:1'],
-            'file_chunk' => ['required', 'file'],
+            'file_chunk' => ['required', 'file', 'mimes:pdf'],
         ];
     }
 }

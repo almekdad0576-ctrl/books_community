@@ -178,26 +178,28 @@ class BookController extends Controller
      * Download the book file using HTTP streaming.
      */
     public function download(Book $book)
-    {
-        $bookFile = $this->bookService->getBookFile($book);
+{
+    $bookFile = $this->bookService->getBookFile($book);
 
-        if (!$bookFile) {
-            return $this->json_response(false, 404, 'Book file not found');
-        }
-
-        $path = $bookFile->path;
-        $fileName = basename($path);
-        $mimeType = Storage::mimeType($path);
-        
-        return response()->stream(function () use ($path) {
-            $stream = Storage::readStream($path);
-            fpassthru($stream);
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
-        }, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-        ]);
+    if (!$bookFile) {
+        return $this->json_response(false, 404, 'Book file not found');
     }
+
+    $path = $bookFile->path;
+    $fileName = $book->title;
+
+    // 1. Ensure the file actually exists
+    if (!Storage::exists($path)) {
+        return $this->json_response(false, 404, 'File missing from storage');
+    }
+
+    // 2. Let Laravel handle the headers, streaming, and buffer completely
+    return Storage::download(
+        $path, 
+        $fileName, 
+        [
+            'Content-Type' => Storage::mimeType($path),
+        ]
+    );
+}
 }
