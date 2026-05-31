@@ -1,0 +1,516 @@
+classDiagram
+    direction TB
+
+    %% ============================================================
+    %% GROUP: Laravel Framework (Built-in)
+    %% ============================================================
+    namespace Laravel_Framework {
+        class BaseController["Routing\\Controller"] {
+            <<abstract>>
+        }
+        class FormRequest["Foundation\\Http\\FormRequest"] {
+            <<abstract>>
+            +authorize() bool
+            +rules() array
+        }
+        class JsonResource["Resources\\Json\\JsonResource"] {
+            <<abstract>>
+            +toArray(Request) array
+            +collection(resource) AnonymousResourceCollection
+        }
+        class Authenticatable["Foundation\\Auth\\User"] {
+            <<abstract>>
+        }
+        class EloquentModel["Eloquent\\Model"] {
+            <<abstract>>
+        }
+        class ServiceProvider["Support\\ServiceProvider"] {
+            <<abstract>>
+            +register() void
+            +boot() void
+        }
+        class SanctumPersonalAccessToken["Sanctum\\PersonalAccessToken"] {
+        }
+        class HasApiTokens["Sanctum\\HasApiTokens"] {
+            <<trait>>
+            +createToken(name) NewAccessToken
+            +currentAccessToken() Token
+            +tokens() HasMany
+        }
+        class HasUuids["Eloquent\\Concerns\\HasUuids"] {
+            <<trait>>
+        }
+        class HasFactory["Eloquent\\Factories\\HasFactory"] {
+            <<trait>>
+        }
+        class AuthorizesRequests["Auth\\Access\\AuthorizesRequests"] {
+            <<trait>>
+            +authorize(ability, args) void
+        }
+        class Gate["Support\\Facades\\Gate"] {
+            <<facade>>
+            +policy(model, policy) void
+        }
+        class Hash["Support\\Facades\\Hash"] {
+            <<facade>>
+            +make(value) string
+            +check(value, hash) bool
+        }
+        class DB["Support\\Facades\\DB"] {
+            <<facade>>
+            +transaction(callback) mixed
+        }
+        class Storage["Support\\Facades\\Storage"] {
+            <<facade>>
+            +put(path, content) bool
+            +exists(path) bool
+            +delete(path) bool
+            +url(path) string
+            +download(path, name, headers) Response
+            +disk(name) FilesystemAdapter
+        }
+        class Auth["Support\\Facades\\Auth"] {
+            <<facade>>
+            +id() string
+        }
+        class Sanctum["Laravel\\Sanctum\\Sanctum"] {
+            <<facade>>
+            +usePersonalAccessTokenModel(class) void
+        }
+        class JsonResponseClass["Illuminate\\Http\\JsonResponse"] {
+        }
+        class BaseException["Exception"] {
+            <<built-in>>
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Controllers
+    %% ============================================================
+    namespace Controllers {
+        class Controller {
+            <<abstract>>
+            #json_response(success, code, message, data) JsonResponse
+        }
+        class AuthController {
+            #authService AuthService
+            +__construct(AuthService)
+            +register(RegisterRequest) JsonResponse
+            +login(LoginRequest) JsonResponse
+            +getProfile(Request) JsonResponse
+            +logout(Request) JsonResponse
+            +update(UpdateUserRequest) JsonResponse
+            +destroy(Request) JsonResponse
+            +show(id) JsonResponse
+        }
+        class BookController {
+            #bookService BookService
+            +__construct(BookService)
+            +store(StoreBookRequest) JsonResponse
+            +upload(UploadBookFileRequest, Book) JsonResponse
+            +show(id) JsonResponse
+            +update(UpdateBookRequest, Book) JsonResponse
+            +destroy(Book) JsonResponse
+            +popular(Request) JsonResponse
+            +recent(Request) JsonResponse
+            +index(Request) JsonResponse
+            +search(Request) JsonResponse
+            +userBooks(Request) JsonResponse
+            +saveBook(Book) JsonResponse
+            +unsaveBook(Book) JsonResponse
+            +savedBooks(Request) JsonResponse
+            +download(Book) Response
+        }
+        class CategoryController {
+            +index() JsonResponse
+        }
+        class CommentController {
+            #commentService CommentService
+            +__construct(CommentService)
+            +index(Request) JsonResponse
+            +show(id) JsonResponse
+            +store(StoreCommentRequest) JsonResponse
+            +update(UpdateCommentRequest, Comment) JsonResponse
+            +destroy(Comment) JsonResponse
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Services
+    %% ============================================================
+    namespace Services {
+        class AuthService {
+            #fileService FileService
+            +__construct(FileService)
+            +registerAuthor(data) string
+            +login(data) string
+            +logout(User) void
+            +updateUser(User, data) User
+            +deleteUser(User) void
+            +getUserById(id) User
+        }
+        class BookService {
+            #fileService FileService
+            +__construct(FileService)
+            +createBook(data, authorId) Book
+            +uploadBookFile(Book, file, chunkIndex, totalChunks) Book
+            +getBook(id, viewerId) Book
+            +getPopularBooks(pageSize, pageNumber) Collection
+            +getRecentBooks(pageSize, pageNumber) Collection
+            +searchBooks(query, pageSize, pageNumber) Collection
+            +updateBook(Book, data) Book
+            +deleteBook(Book) bool
+            +getAuthorBooks(authorId, pageSize, pageNumber) Collection
+            +saveBook(userId, bookId) void
+            +unsaveBook(userId, bookId) void
+            +getSavedBooks(userId, pageSize, pageNumber) Collection
+            +getBookFile(Book) File
+        }
+        class CommentService {
+            +createComment(data, userId) Comment
+            +getComments(bookId, pageSize, pageNumber) Collection
+            +getComment(id) Comment
+            +updateComment(Comment, data) Comment
+            +deleteComment(Comment) bool
+        }
+        class FileService {
+            #directories array
+            +__construct()
+            +attachToUser(User, file, FileType) File
+            +attachToBook(Book, file, FileType) File
+            +detach(Model, FileType) void
+            +uploadChunk(Model, fileChunk, FileType, chunkIndex, totalChunks) bool
+            #attach(Model, file, FileType, directory) File
+            #ensureDirectoryExists(directory) void
+            #getEntityType(Model) EntityType
+            #getDefaultDirectory(EntityType, FileType) string
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Models
+    %% ============================================================
+    namespace Models {
+        class User {
+            +name string
+            +email string
+            +password string
+            +books() HasMany
+            +viewedBooks() BelongsToMany
+            +savedBooks() BelongsToMany
+            +files() MorphMany
+        }
+        class Book {
+            +title string
+            +description string
+            +author_id string
+            +category_id string
+            +views_num int
+            +status BookStatus
+            +comment_count int
+            +category() BelongsTo
+            +author() BelongsTo
+            +viewers() BelongsToMany
+            +savers() BelongsToMany
+            +comments() HasMany
+            +files() MorphMany
+        }
+        class Category {
+            +name string
+            +books() HasMany
+        }
+        class Comment {
+            +book_id string
+            +user_id string
+            +parent_comment_id string
+            +content string
+            +reply_count int
+            +book() BelongsTo
+            +user() BelongsTo
+            +parent() BelongsTo
+            +replies() HasMany
+        }
+        class File {
+            +entity_id string
+            +entity_type EntityType
+            +type FileType
+            +path string
+        }
+        class PersonalAccessToken {
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — HTTP Requests
+    %% ============================================================
+    namespace Requests {
+        class LoginRequest {
+            +rules() array
+        }
+        class RegisterRequest {
+            +rules() array
+        }
+        class UpdateUserRequest {
+            +rules() array
+        }
+        class StoreBookRequest {
+            +rules() array
+        }
+        class UpdateBookRequest {
+            +rules() array
+        }
+        class UploadBookFileRequest {
+            +rules() array
+        }
+        class StoreCommentRequest {
+            +rules() array
+        }
+        class UpdateCommentRequest {
+            +rules() array
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — HTTP Resources
+    %% ============================================================
+    namespace Resources {
+        class UserResource {
+            +toArray(Request) array
+        }
+        class BookResource {
+            +toArray(Request) array
+        }
+        class CommentResource {
+            +toArray(Request) array
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Policies
+    %% ============================================================
+    namespace Policies {
+        class BookPolicy {
+            +update(User, Book) bool
+            +delete(User, Book) bool
+        }
+        class CommentPolicy {
+            +update(User, Comment) bool
+            +delete(User, Comment) bool
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Observers
+    %% ============================================================
+    namespace Observers {
+        class CommentObserver {
+            +created(Comment) void
+            +deleted(Comment) void
+            #updateCounts(Comment) void
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Enums
+    %% ============================================================
+    namespace Enums {
+        class BookStatus {
+            <<enumeration>>
+            PENDING_UPLOAD
+            ACTIVE
+        }
+        class EntityType {
+            <<enumeration>>
+            USER
+            BOOK
+        }
+        class FileType {
+            <<enumeration>>
+            IMAGE
+            VIDEO
+            DOCUMENT
+            OTHER
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Exceptions & Helpers
+    %% ============================================================
+    namespace Support {
+        class PasswordMismatchException {
+        }
+        class Utilities {
+            <<helper>>
+            +apiResponse(success, code, message, data) JsonResponse$
+        }
+    }
+
+    %% ============================================================
+    %% GROUP: Application — Providers
+    %% ============================================================
+    namespace Providers {
+        class AppServiceProvider {
+            +register() void
+            +boot() void
+        }
+    }
+
+    %% ============================================================
+    %% INHERITANCE — Framework extensions
+    %% ============================================================
+    BaseController      <|-- Controller
+    FormRequest         <|-- LoginRequest
+    FormRequest         <|-- RegisterRequest
+    FormRequest         <|-- UpdateUserRequest
+    FormRequest         <|-- StoreBookRequest
+    FormRequest         <|-- UpdateBookRequest
+    FormRequest         <|-- UploadBookFileRequest
+    FormRequest         <|-- StoreCommentRequest
+    FormRequest         <|-- UpdateCommentRequest
+    JsonResource        <|-- UserResource
+    JsonResource        <|-- BookResource
+    JsonResource        <|-- CommentResource
+    Authenticatable     <|-- User
+    EloquentModel       <|-- Book
+    EloquentModel       <|-- Category
+    EloquentModel       <|-- Comment
+    EloquentModel       <|-- File
+    SanctumPersonalAccessToken <|-- PersonalAccessToken
+    ServiceProvider     <|-- AppServiceProvider
+    BaseException       <|-- PasswordMismatchException
+
+    %% ============================================================
+    %% INHERITANCE — App controllers
+    %% ============================================================
+    Controller          <|-- AuthController
+    Controller          <|-- BookController
+    Controller          <|-- CategoryController
+    Controller          <|-- CommentController
+
+    %% ============================================================
+    %% TRAITS applied to models
+    %% ============================================================
+    HasApiTokens        <.. User : uses
+    HasUuids            <.. User : uses
+    HasFactory          <.. User : uses
+    HasUuids            <.. Book : uses
+    HasFactory          <.. Book : uses
+    HasUuids            <.. Category : uses
+    HasFactory          <.. Category : uses
+    HasUuids            <.. Comment : uses
+    HasFactory          <.. Comment : uses
+    HasUuids            <.. File : uses
+    HasUuids            <.. PersonalAccessToken : uses
+    AuthorizesRequests  <.. Controller : uses
+
+    %% ============================================================
+    %% CONTROLLER → SERVICE dependencies
+    %% ============================================================
+    AuthController      --> AuthService : uses
+    BookController      --> BookService : uses
+    CommentController   --> CommentService : uses
+    CategoryController  --> Category : queries
+
+    %% ============================================================
+    %% SERVICE → SERVICE dependencies
+    %% ============================================================
+    AuthService         --> FileService : uses
+    BookService         --> FileService : uses
+
+    %% ============================================================
+    %% SERVICE → MODEL dependencies
+    %% ============================================================
+    AuthService         --> User : manages
+    BookService         --> Book : manages
+    BookService         --> User : queries
+    BookService         --> File : queries
+    CommentService      --> Comment : manages
+    FileService         --> File : manages
+    FileService         --> User : type-checks
+    FileService         --> Book : type-checks
+
+    %% ============================================================
+    %% CONTROLLER → REQUEST dependencies
+    %% ============================================================
+    AuthController      ..> LoginRequest : validates
+    AuthController      ..> RegisterRequest : validates
+    AuthController      ..> UpdateUserRequest : validates
+    BookController      ..> StoreBookRequest : validates
+    BookController      ..> UpdateBookRequest : validates
+    BookController      ..> UploadBookFileRequest : validates
+    CommentController   ..> StoreCommentRequest : validates
+    CommentController   ..> UpdateCommentRequest : validates
+
+    %% ============================================================
+    %% CONTROLLER → RESOURCE dependencies
+    %% ============================================================
+    AuthController      ..> UserResource : transforms
+    BookController      ..> BookResource : transforms
+    CommentController   ..> CommentResource : transforms
+
+    %% ============================================================
+    %% RESOURCE → MODEL dependencies
+    %% ============================================================
+    UserResource        --> File : queries
+    BookResource        --> File : queries
+
+    %% ============================================================
+    %% MODEL relationships
+    %% ============================================================
+    User                "1" --> "many" Book : authors
+    User                "many" -- "many" Book : views (book_views)
+    User                "many" -- "many" Book : saves (book_saves)
+    Book                "many" --> "1" Category : belongs to
+    Book                "1" --> "many" Comment : has
+    Comment             "many" --> "1" Book : belongs to
+    Comment             "many" --> "1" User : belongs to
+    Comment             "1" --> "many" Comment : replies
+    File                --> EntityType : casts
+    File                --> FileType : casts
+    Book                --> BookStatus : casts
+
+    %% ============================================================
+    %% POLICY dependencies
+    %% ============================================================
+    BookPolicy          --> User : checks
+    BookPolicy          --> Book : checks
+    CommentPolicy       --> User : checks
+    CommentPolicy       --> Comment : checks
+
+    %% ============================================================
+    %% OBSERVER dependencies
+    %% ============================================================
+    CommentObserver     --> Comment : observes
+    CommentObserver     --> Book : updates counts
+
+    %% ============================================================
+    %% PROVIDER registrations & bindings
+    %% ============================================================
+    AppServiceProvider  --> FileService : singleton
+    AppServiceProvider  --> AuthService : singleton
+    AppServiceProvider  --> BookService : singleton
+    AppServiceProvider  --> CommentService : singleton
+    AppServiceProvider  --> PersonalAccessToken : Sanctum model
+    AppServiceProvider  --> CommentObserver : registers
+    AppServiceProvider  --> BookPolicy : Gate policy
+    AppServiceProvider  --> CommentPolicy : Gate policy
+    AppServiceProvider  ..> Sanctum : configures
+    AppServiceProvider  ..> Gate : registers policies
+
+    %% ============================================================
+    %% FRAMEWORK FACADE usage
+    %% ============================================================
+    AuthService         ..> Hash : uses
+    AuthService         ..> DB : uses
+    BookService         ..> DB : uses
+    CommentService      ..> DB : uses
+    FileService         ..> Storage : uses
+    BookController      ..> Auth : uses
+    BookController      ..> Storage : uses
+    CommentController   ..> Auth : uses
+    Controller          ..> Utilities : uses
+
+    %% ============================================================
+    %% EXCEPTION usage
+    %% ============================================================
+    AuthService         ..> PasswordMismatchException : throws
