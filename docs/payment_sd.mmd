@@ -1,0 +1,86 @@
+sequenceDiagram
+    autonumber
+    actor Author as Author / Seller
+    actor Client as Client / Buyer
+    participant FE as App Frontend
+    participant BE as App Backend
+    participant DB as System Database
+    participant Stripe as Stripe API Core
+
+    %% =========================================================
+    %% SCENARIO 1: AUTHOR ACCOUNT SETUP & BOOK PUBLISHING
+    %% =========================================================
+    Note over Author, Stripe: SCENARIO 1: Author Registration & Book Publishing
+
+    rect rgb(90,105,90)
+        Note over Author, DB: Step 1: Standard App Signup (No Stripe yet)
+        Author->>FE: Fills local registration form
+        FE->>BE: POST /auth/register
+        BE->>DB: Save User Profile (role: author, stripe_user_id: null)
+        BE-->>FE: Account Created & Logged In
+    end
+
+    rect rgb(90,105,90)
+        Note over Author, Stripe: Step 2: Connect Existing App Account to Stripe (OAuth)
+        Author->>FE: Navigates to Payout Settings -> Clicks "Connect Stripe"
+        FE->>BE: GET /auth/stripe/connect
+        BE->>Stripe: Redirect to Stripe OAuth Authorize URL<br/>(Pass Client_ID, Scope=read_write, State=CSRF_Token)
+        Stripe-->>Author: Display Stripe Login / Account Connection Screen
+        Author->>Stripe: Authenticates & approves connection to your Platform
+        Stripe-->>BE: Redirect to Callback URL with ?code=AUTHORIZATION_CODE&state=CSRF_Token
+        
+        BE->>BE: Verify State/CSRF Token matches Author session
+        BE->>Stripe: POST /oauth/token (Exchange Code + Secret Key)
+        Stripe-->>BE: Return stripe_user_id (acct_xxx)
+        BE->>DB: Update Author row -> Save stripe_user_id = acct_xxx
+        BE-->>FE: Display "Stripe Wallet Connected Successfully!"
+    end
+
+    rect rgb(90,105,90)
+        Note over Author, DB: Step 3: Author Publishes a Book
+        Author->>FE: Fills book details & sets Price ($10.00)
+        FE->>BE: POST /books/create
+        BE->>DB: Check if stripe_user_id exists -> Save Book row
+        BE-->>FE: Book is now live on the library!
+    end
+
+    %% =========================================================
+    %% SCENARIO 2: CLIENT BUYS A BOOK (DIRECT CHARGE MODEL)
+    %% =========================================================
+    Note over Client, Stripe: SCENARIO 2: Client Wants to Buy a Book
+
+    Client->>FE: Search books & find Published Book
+    Client->>FE: Click "Buy Now"
+
+    alt Client is Guest / Not Registered
+        FE-->>Client: Prompt "Please Sign up / Log in to buy this book"
+        Client->>FE: Completes local Signup Form
+        FE->>BE: POST /auth/register
+        BE->>DB: Save Client profile
+        BE-->>FE: Account verified -> Redirect back to Book page
+        Client->>FE: Click "Buy Now" (Again, now authenticated)
+    end
+
+    rect rgb(90,105,90)
+        Note over Client, Stripe: System processes Direct Charge Order
+        FE->>BE: POST /orders/checkout (book_id)
+        BE->>DB: Create temporary order row (status: pending)
+        
+        BE->>Stripe: POST /v1/checkout/sessions (Direct Charge Setup)<br/>- Pass Author's stripe_user_id in Stripe-Account Header<br/>- Line Item: $10.00<br/>- application_fee_amount: $2.00 (Our Platform Fee)
+        Stripe-->>BE: Return Checkout Session URL & Client Secret
+        BE-->>FE: JSON redirect details
+        FE->>Client: Redirect browser to Stripe-Hosted Checkout Page
+        
+        Client->>Stripe: Enters Payment details (Card info) & Submits
+        Note over Stripe: Stripe executes transaction on Author's merchant account.<br/>Moves $10 into Author account, instantly extracts $2 to Platform.
+        Stripe-->>Client: Redirects back to App Success Page
+    end
+
+    rect rgb(90,105,90)
+        Note over Stripe, BE: Asynchronous Fulfillment (Webhooks)
+        Stripe->>BE: Webhook Event: checkout.session.completed (signed payload)
+        BE->>DB: Look up Order -> Mark status as 'paid'
+        BE->>DB: Grant Book Access Ownership token to Client Account
+        BE-->>Client: Success Page displays "Download Link Available!"
+        Client->>FE: Click Download Link -> Access Book file securely
+    end
