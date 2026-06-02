@@ -7,8 +7,9 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite pdo_mysql pdo_pgsql
-
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_sqlite pdo_mysql pdo_pgsql pgsql
+    
 # 3. Enable Apache's mod_rewrite module for clean API routing (e.g., /api/users)
 RUN a2enmod rewrite
 
