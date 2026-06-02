@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libpq-dev \
     && docker-php-ext-install pdo pdo_sqlite pdo_mysql pdo_pgsql pgsql
-    
+
 # 3. Enable Apache's mod_rewrite module for clean API routing (e.g., /api/users)
 RUN a2enmod rewrite
 
@@ -35,4 +35,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # 9. Run migrations and start Apache when the container launches
-CMD ["sh", "-c", "php artisan migrate --force && apache2-foreground"]
+CMD ["sh", "-c", "php artisan migrate:fresh --force && apache2-foreground"]
