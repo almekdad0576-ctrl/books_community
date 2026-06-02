@@ -24,6 +24,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
+# Install production dependencies using Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
 # 7. Grant Apache permission to read/write to Laravel's storage and cache folders
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
