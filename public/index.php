@@ -1,5 +1,12 @@
 <?php
 
+// 1. Stop printing errors onto the public screen
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+ini_set('display_errors', '0');
+
+// 2. Ensure errors still get saved silently to your log files
+ini_set('log_errors', '1');
+
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));

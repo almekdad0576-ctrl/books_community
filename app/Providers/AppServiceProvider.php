@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use App\Services\AuthService;
 use App\Services\BookService;
 use App\Services\CommentService;
@@ -62,5 +63,18 @@ class AppServiceProvider extends ServiceProvider
                     SecurityScheme::http('bearer') // This tells Scramble to use a Bearer token
                 );
             });
+        Gate::define('viewApiDocs', function ($user = null) {
+        // ⚠️ WARNING: Returning true allows ANYONE on the internet to see your docs.
+        // This is perfect for public testing!
+        return true; 
+        
+        // Secure Alternative for later:
+        // return app()->environment('local') || ($user && $user->is_admin);
+        });
+
+        // Force HTTPS if the app environment is production
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

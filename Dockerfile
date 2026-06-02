@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite pdo_mysql
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_sqlite pdo_mysql pdo_pgsql pgsql
 
 # 3. Enable Apache's mod_rewrite module for clean API routing (e.g., /api/users)
 RUN a2enmod rewrite
@@ -24,6 +25,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
+# Install production dependencies using Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
 # 7. Grant Apache permission to read/write to Laravel's storage and cache folders
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
@@ -31,4 +35,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # 9. Run migrations and start Apache when the container launches
-CMD ["sh", "-c", "php artisan migrate --force && apache2-foreground"]
+# 9. Run discovery, migrations, and start Apache when the container launches
+CMD ["sh", "-c", "php artisan package:discover && php artisan migrate --force && apache2-foreground"]
