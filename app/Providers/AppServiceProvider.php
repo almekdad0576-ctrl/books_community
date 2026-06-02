@@ -70,5 +70,10 @@ class AppServiceProvider extends ServiceProvider
         // Secure Alternative for later:
         // return app()->environment('local') || ($user && $user->is_admin);
         });
+
+        // Force HTTPS if the app environment is production
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }
