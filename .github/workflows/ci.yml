@@ -1,0 +1,44 @@
+name: Run API Code Tests
+
+# Trigger the workflow on pushes or pull requests to the main branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout the repository code onto the runner
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Setup PHP 8.5 environment with required extensions
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.5'
+        extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite
+        coverage: none
+
+    # 3. Copy the testing environment file
+    - name: Copy Environment File
+      run: cp .env.example .env
+
+    # 4. Install Composer dependencies
+    - name: Install Dependencies
+      run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    # 5. Generate application encryption key
+    - name: Generate Application Key
+      run: php artisan key:generate
+
+    # 6. Execute the test suite using the in-memory database
+    - name: Execute Tests
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: ":memory:"
+      run: php artisan test

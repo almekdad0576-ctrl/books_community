@@ -9,7 +9,6 @@
         "dedoc/scramble": "^0.13.23",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
-        "laravel/socialite": "^5.27",
         "laravel/tinker": "^2.9"
     },
     "require-dev": {
