@@ -70,7 +70,7 @@ class BookTest extends TestCase
 
         // Upload first chunk
         $response = $this->postJson("/api/books/{$book->id}/upload", [
-            'chunk_index' => 0,
+            'chunk_index' => 1,
             'total_chunks' => 2,
             'file_chunk' => $chunk1,
         ]);
@@ -85,7 +85,7 @@ class BookTest extends TestCase
 
         // Upload second chunk
         $response = $this->postJson("/api/books/{$book->id}/upload", [
-            'chunk_index' => 1,
+            'chunk_index' => 2,
             'total_chunks' => 2,
             'file_chunk' => $chunk2,
         ]);
@@ -528,14 +528,14 @@ class BookTest extends TestCase
 
         // Upload first chunk
         $this->postJson("/api/books/{$book->id}/upload", [
-            'chunk_index' => 0,
+            'chunk_index' => 1,
             'total_chunks' => 2,
             'file_chunk' => $chunk1,
         ]);
 
         // Upload second chunk
         $this->postJson("/api/books/{$book->id}/upload", [
-            'chunk_index' => 1,
+            'chunk_index' => 2,
             'total_chunks' => 2,
             'file_chunk' => $chunk2,
         ]);
