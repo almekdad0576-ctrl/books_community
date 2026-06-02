@@ -35,4 +35,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # 9. Run migrations and start Apache when the container launches
-CMD ["sh", "-c", "php artisan migrate:fresh --force && apache2-foreground"]
+# 9. Run discovery, migrations, and start Apache when the container launches
+CMD ["sh", "-c", "php artisan package:discover && php artisan migrate --force && apache2-foreground"]
