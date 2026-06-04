@@ -33,6 +33,10 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Login user.
+     * @unauthenticated
+     */
     public function login(LoginRequest $request)
     {
         $token = $this->authService->login($request->validated());
@@ -42,11 +46,17 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Get authenticated user profile.
+     */
     public function getProfile(Request $request)
     {
         return $this->json_response(true, 200, 'Profile retrieved successfully', new UserResource($request->user()));
     }
 
+    /**
+     * Logout user.
+     */
     public function logout(Request $request)
     {
         $this->authService->logout($request->user());
@@ -54,6 +64,10 @@ class AuthController extends Controller
         return $this->json_response(true, 200, 'Successfully logged out');
     }
 
+    /**
+     * Update user profile.
+     * @requestMediaType multipart/form-data
+     */
     public function update(UpdateUserRequest $request)
     {
         $user = $this->authService->updateUser($request->user(), $request->validated());
@@ -61,6 +75,9 @@ class AuthController extends Controller
         return $this->json_response(true, 200, 'User updated successfully', new UserResource($user));
     }
 
+    /**
+     * Delete user account.
+     */
     public function destroy(Request $request)
     {
         $this->authService->deleteUser($request->user());
@@ -70,6 +87,7 @@ class AuthController extends Controller
 
     /**
      * Get author by ID.
+     * @unauthenticated
      */
     public function show(string $id)
     {

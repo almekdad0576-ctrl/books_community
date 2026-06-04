@@ -21,6 +21,10 @@ class CommentController extends Controller
         $this->commentService = $commentService;
     }
 
+    /**
+     * Display a listing of comments.
+     * @unauthenticated
+     */
     public function index(Request $request)
     {
         $bookId = $request->query('book_id');
@@ -32,18 +36,28 @@ class CommentController extends Controller
         return $this->json_response(true, 200, 'Comments retrieved successfully', CommentResource::collection($comments));
     }
 
+    /**
+     * Display the specified comment.
+     * @unauthenticated
+     */
     public function show(string $id)
     {
         $comment = $this->commentService->getComment($id);
         return $this->json_response(true, 200, 'Comment retrieved successfully', new CommentResource($comment));
     }
 
+    /**
+     * Store a newly created comment in storage.
+     */
     public function store(StoreCommentRequest $request)
     {
         $comment = $this->commentService->createComment($request->validated(), Auth::id());
         return $this->json_response(true, 201, 'Comment created successfully', new CommentResource($comment));
     }
 
+    /**
+     * Update the specified comment in storage.
+     */
     public function update(UpdateCommentRequest $request, Comment $comment)
     {
         $this->authorize('update', $comment);
@@ -51,6 +65,9 @@ class CommentController extends Controller
         return $this->json_response(true, 200, 'Comment updated successfully', new CommentResource($comment));
     }
 
+    /**
+     * Remove the specified comment from storage.
+     */
     public function destroy(Comment $comment): JsonResponse
     {
         $this->authorize('delete', $comment);

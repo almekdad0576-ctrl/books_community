@@ -25,6 +25,7 @@ class BookController extends Controller
 
     /**
      * Upload book file in chunks.
+     * @requestMediaType multipart/form-data
      */
     public function upload(UploadBookFileRequest $request, Book $book)
     {
@@ -41,6 +42,7 @@ class BookController extends Controller
 
     /**
      * Store a newly created book in storage.
+     * @requestMediaType multipart/form-data
      */
     public function store(StoreBookRequest $request)
     {
@@ -51,6 +53,7 @@ class BookController extends Controller
 
     /**
      * Display the specified book.
+     * @unauthenticated
      */
     public function show(string $id)
     {
@@ -83,6 +86,7 @@ class BookController extends Controller
 
     /**
      * Get popular books.
+     * @unauthenticated
      */
     public function popular(Request $request)
     {
@@ -95,6 +99,7 @@ class BookController extends Controller
 
     /**
      * Get recent books.
+     * @unauthenticated
      */
     public function recent(Request $request)
     {
@@ -107,6 +112,7 @@ class BookController extends Controller
 
     /**
      * Display a listing of books.
+     * @unauthenticated
      */
     public function index(Request $request)
     {
@@ -119,6 +125,7 @@ class BookController extends Controller
 
     /**
      * Search books.
+     * @unauthenticated
      */
     public function search(Request $request)
     {
@@ -176,6 +183,7 @@ class BookController extends Controller
 
     /**
      * Download the book file using HTTP streaming.
+     * @unauthenticated
      */
     public function download(Book $book)
 {
