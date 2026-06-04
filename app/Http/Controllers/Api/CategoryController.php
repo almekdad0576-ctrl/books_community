@@ -10,6 +10,7 @@ class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * @unauthenticated
      */
     public function index(): JsonResponse
     {
