@@ -36,4 +36,4 @@ EXPOSE 80
 
 # 9. Run migrations and start Apache when the container launches
 # 9. Run discovery, migrations, and start Apache when the container launches
-CMD ["sh", "-c", "php artisan package:discover && php artisan migrate --force && apache2-foreground"]
+CMD ["sh", "-c", "php artisan package:discover && php artisan migrate --force --seed && apache2-foreground"]
