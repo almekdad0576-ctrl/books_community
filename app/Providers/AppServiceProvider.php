@@ -76,11 +76,5 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
-
-        if (env('DB_SSL_CA') && env(DB_CONNECTION) == 'pgsql') {
-            $caPath = storage_path('ca.pem');
-            file_put_contents($caPath, env('DB_SSL_CA'));
-            config(['database.connections.pgsql.options.' . PDO::PGSQL_ATTR_SSL_CA => $caPath]);
-        }
     }
 }

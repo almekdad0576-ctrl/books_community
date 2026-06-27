@@ -79,7 +79,6 @@ return [
             ]) : [],
         ],
 
-        // only online
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
@@ -92,10 +91,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'verify-full',
-            'options' => [
-                PDO::PGSQL_ATTR_SSL_CA => env('DB_CA_CERT'),
-            ],
+            'sslmode' => 'prefer',
         ],
 
         'sqlsrv' => [
