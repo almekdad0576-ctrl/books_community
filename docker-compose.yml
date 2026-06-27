@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. Our Laravel API Service
+  # Our Laravel API Service
   app:
     build:
       context: .
@@ -13,25 +13,6 @@ services:
       - "8000:80" # Access your API locally via http://localhost:8000
     volumes:
       - .:/var/www/html
-    depends_on:
-      - db
-    networks:
-      - laravel_network
-
-  # 2. Our MySQL Database Service
-  db:
-    image: mysql:8.0
-    container_name: library_api_db
-    restart: unless-stopped
-    tty: true
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_DATABASE: library_test
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: root
-    volumes:
-      - dbdata:/var/lib/mysql
     networks:
       - laravel_network
 
@@ -39,8 +20,3 @@ services:
 networks:
   laravel_network:
     driver: bridge
-
-# Volumes to make sure database data isn't lost when containers stop
-volumes:
-  dbdata:
-    driver: local
