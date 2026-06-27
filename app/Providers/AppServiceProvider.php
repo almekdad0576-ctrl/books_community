@@ -76,5 +76,13 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        if (env('DB_SSL_CA_CONTENT') && env('DB_CONNECTION')=='pgsql') {
+            $certPath = storage_path('aiven-ca.pem');
+            file_put_contents($certPath, env('DB_SSL_CA_CONTENT'));
+            
+            // Ensure Laravel knows where this file is
+            config(['database.connections.pgsql.sslrootcert' => $certPath]);
+        }
     }
 }
