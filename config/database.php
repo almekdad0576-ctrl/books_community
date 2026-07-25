@@ -91,7 +91,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'require',
+            'sslmode' => 'allow',
             'sslrootcert' => env('DB_SSL_CA_PATH'),
         ],
 
